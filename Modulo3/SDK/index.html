@@ -231,6 +231,43 @@
             background: rgba(255, 255, 255, 0.2);
             box-shadow: none;
         }
+
+        .response-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+        .response-header.success { color: var(--success); }
+        .response-header.error { color: var(--error); }
+        
+        .data-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+        }
+        .data-row {
+            display: flex;
+            flex-direction: column;
+            background: rgba(0,0,0,0.2);
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border-left: 3px solid var(--primary);
+        }
+        .data-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+        }
+        .data-value {
+            font-size: 0.95rem;
+            color: #fff;
+            word-break: break-all;
+        }
     </style>
 </head>
 
@@ -238,7 +275,7 @@
 
     <div class="container">
         <div class="header">
-            <h1>AWS Serverless Portal</h1>
+            <h1>AWS BETEK</h1>
             <p>Laboratorio: API Gateway + Lambda + DynamoDB + S3</p>
         </div>
 
@@ -246,7 +283,7 @@
         <div class="glass-panel">
             <div class="form-group">
                 <label for="apiUrl">🔗 URL Base de tu API Gateway</label>
-                <input type="text" id="apiUrl" placeholder="Ej: https://x8x8x8x8.execute-api.us-east-1.amazonaws.com">
+                <input type="text" id="apiUrl" placeholder="Ej: https://x8x8x8x8.execute-api.us-east-1.amazonaws.com" value="https://lnqhgp17m3.execute-api.us-east-1.amazonaws.com">
                 <p class="hint">Pega aquí el "Invoke URL" que te dio API Gateway. Puedes o no incluir el "/clientes" al
                     final, el sistema lo adaptará.</p>
             </div>
@@ -316,15 +353,69 @@
             const el = document.getElementById(elementId);
             el.style.display = 'block';
             el.className = 'result-box ' + (isError ? 'error' : 'success');
-
-            // Format JSON nicely
-            let displayHtml = JSON.stringify(data, null, 2);
-            el.innerHTML = `<strong>${isError ? '❌ Error' : '✅ Respuesta Exitosa'}:</strong>\n\n${displayHtml}`;
-
-            // If it has an ID, add a copy button
-            if (!isError && data.cliente_id) {
-                el.innerHTML += `\n\n<button type="button" class="copy-btn" onclick="copyId('${data.cliente_id}')">📋 Copiar cliente_id</button>`;
+            
+            if (isError) {
+                const errMsg = data.message || "Error Desconocido";
+                const errDetail = data.error || JSON.stringify(data);
+                el.innerHTML = `
+                    <div class="response-header error">❌ ${errMsg}</div>
+                    <div class="data-row" style="border-color: var(--error);">
+                        <span class="data-label">Detalle del Error</span>
+                        <span class="data-value">${errDetail}</span>
+                    </div>
+                `;
+                return;
             }
+
+            // Success responses check
+            let innerContent = `<div class="response-header success">✅ ${data.message || 'Operación Exitosa'}</div><div class="data-grid">`;
+
+            if (data.cliente_id && data.s3_backup) { // Create POST response
+                innerContent += `
+                    <div class="data-row">
+                        <span class="data-label">ID del Cliente</span>
+                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                            <span class="data-value" style="color: var(--secondary); font-weight: bold;">${data.cliente_id}</span>
+                            <button type="button" class="copy-btn" style="margin:0;" onclick="copyId('${data.cliente_id}')">📋 Copiar ID</button>
+                        </div>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">Ruta de Respaldo S3</span>
+                        <span class="data-value">${data.s3_backup}</span>
+                    </div>
+                `;
+            } else if (data.data) { // Query GET response
+                const user = data.data;
+                const formattedDate = new Date(user.fecha_registro).toLocaleString() || user.fecha_registro;
+                innerContent += `
+                    <div class="data-row">
+                        <span class="data-label">ID del Cliente</span>
+                        <span class="data-value" style="color: var(--secondary); font-weight: bold;">${user.cliente_id}</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">Nombre del Cliente</span>
+                        <span class="data-value">${user.nombre}</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">Correo Electrónico</span>
+                        <span class="data-value">${user.correo}</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">Ciudad</span>
+                        <span class="data-value">${user.ciudad}</span>
+                    </div>
+                    <div class="data-row" style="border-color: var(--success);">
+                        <span class="data-label">Fecha de Registro en AWS</span>
+                        <span class="data-value">${formattedDate}</span>
+                    </div>
+                `;
+            } else {
+                // Fallback for other success structures
+                innerContent += `<pre style="font-family: monospace; white-space: pre-wrap;">${JSON.stringify(data, null, 2)}</pre>`;
+            }
+
+            innerContent += `</div>`;
+            el.innerHTML = innerContent;
         }
 
         window.copyId = function (id) {
