@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWS Serverless Lab - Portal de Clientes</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --secondary: #8b5cf6;
+            --secondary-hover: #7c3aed;
+            --input-bg: rgba(15, 23, 42, 0.6);
+            --success: #10b981;
+            --error: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image:
+                radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.15) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .glass-panel {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--card-border);
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            margin-bottom: 2rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .glass-panel:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #e2e8f0;
+            font-size: 0.95rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 0.5rem;
+            color: white;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        .hint {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: #f8fafc;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 0.75rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 0.875rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--secondary-hover);
+            box-shadow: 0 4px 14px rgba(139, 92, 246, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .result-box {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            display: none;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .result-box.success {
+            border-left: 4px solid var(--success);
+        }
+
+        .result-box.error {
+            border-left: 4px solid var(--error);
+        }
+
+        .copy-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 4px 8px;
+            font-size: 0.8rem;
+            border-radius: 4px;
+            margin-top: 8px;
+            width: auto;
+            display: inline-block;
+        }
+
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>AWS Serverless Portal</h1>
+            <p>Laboratorio: API Gateway + Lambda + DynamoDB + S3</p>
+        </div>
+
+        <!-- API Configuration -->
+        <div class="glass-panel">
+            <div class="form-group">
+                <label for="apiUrl">🔗 URL Base de tu API Gateway</label>
+                <input type="text" id="apiUrl" placeholder="Ej: https://x8x8x8x8.execute-api.us-east-1.amazonaws.com">
+                <p class="hint">Pega aquí el "Invoke URL" que te dio API Gateway. Puedes o no incluir el "/clientes" al
+                    final, el sistema lo adaptará.</p>
+            </div>
+        </div>
+
+        <div class="grid">
+            <!-- CREATE CLIENT FORM -->
+            <div class="glass-panel">
+                <h2>Crear Cliente (POST)</h2>
+                <form id="createForm">
+                    <div class="form-group">
+                        <label for="nombre">Nombre</label>
+                        <input type="text" id="nombre" required placeholder="Ej: Johan">
+                    </div>
+                    <div class="form-group">
+                        <label for="correo">Correo Electrónico</label>
+                        <input type="email" id="correo" required placeholder="Ej: johan@demo.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="ciudad">Ciudad</label>
+                        <input type="text" id="ciudad" required placeholder="Ej: Bogotá">
+                    </div>
+                    <button type="submit" class="btn-primary" id="btnCreate">
+                        <span id="textCreate">Enviar Petición POST</span>
+                        <div class="spinner" id="spinnerCreate"></div>
+                    </button>
+                </form>
+                <div id="createResult" class="result-box"></div>
+            </div>
+
+            <!-- GET CLIENT FORM -->
+            <div class="glass-panel">
+                <h2>Consultar Cliente (GET)</h2>
+                <form id="queryForm">
+                    <div class="form-group">
+                        <label for="clienteId">ID del Cliente</label>
+                        <input type="text" id="clienteId" required placeholder="Ej: 123e4567-e89b-12d3...">
+                        <p class="hint">Copia el ID generado en el panel izquierdo y pégalo aquí.</p>
+                    </div>
+                    <button type="submit" class="btn-secondary" id="btnQuery">
+                        <span id="textQuery">Enviar Petición GET</span>
+                        <div class="spinner" id="spinnerQuery"></div>
+                    </button>
+                </form>
+                <div id="queryResult" class="result-box"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Utilities
+        function getBaseUrl() {
+            let url = document.getElementById('apiUrl').value.trim();
+            if (!url) {
+                alert("Por favor ingresa la URL de tu API Gateway primero.");
+                return null;
+            }
+            // Ensure no trailing slash, and append /clientes if missing
+            url = url.replace(/\/$/, "");
+            if (!url.endsWith("/clientes")) {
+                url += "/clientes";
+            }
+            return url;
+        }
+
+        function showResult(elementId, data, isError = false) {
+            const el = document.getElementById(elementId);
+            el.style.display = 'block';
+            el.className = 'result-box ' + (isError ? 'error' : 'success');
+
+            // Format JSON nicely
+            let displayHtml = JSON.stringify(data, null, 2);
+            el.innerHTML = `<strong>${isError ? '❌ Error' : '✅ Respuesta Exitosa'}:</strong>\n\n${displayHtml}`;
+
+            // If it has an ID, add a copy button
+            if (!isError && data.cliente_id) {
+                el.innerHTML += `\n\n<button type="button" class="copy-btn" onclick="copyId('${data.cliente_id}')">📋 Copiar cliente_id</button>`;
+            }
+        }
+
+        window.copyId = function (id) {
+            navigator.clipboard.writeText(id).then(() => {
+                document.getElementById('clienteId').value = id;
+                alert('ID copiado y pegado en el campo de búsqueda!');
+            });
+        }
+
+        function setLoading(btnId, textId, spinnerId, isLoading) {
+            const btn = document.getElementById(btnId);
+            const text = document.getElementById(textId);
+            const spinner = document.getElementById(spinnerId);
+
+            btn.disabled = isLoading;
+            text.style.display = isLoading ? 'none' : 'block';
+            spinner.style.display = isLoading ? 'block' : 'none';
+        }
+
+        // --- POST: CREATE CLIENT ---
+        document.getElementById('createForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const baseUrl = getBaseUrl();
+            if (!baseUrl) return;
+
+            const payload = {
+                nombre: document.getElementById('nombre').value,
+                correo: document.getElementById('correo').value,
+                ciudad: document.getElementById('ciudad').value
+            };
+
+            setLoading('btnCreate', 'textCreate', 'spinnerCreate', true);
+            document.getElementById('createResult').style.display = 'none';
+
+            try {
+                const response = await fetch(baseUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                showResult('createResult', data, !response.ok);
+            } catch (err) {
+                showResult('createResult', { error: "Fallo de red o CORS. Revisa la consola o asegúrate de que la URL sea correcta." }, true);
+                console.error(err);
+            } finally {
+                setLoading('btnCreate', 'textCreate', 'spinnerCreate', false);
+            }
+        });
+
+        // --- GET: QUERY CLIENT ---
+        document.getElementById('queryForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const baseUrl = getBaseUrl();
+            if (!baseUrl) return;
+
+            const id = document.getElementById('clienteId').value.trim();
+            if (!id) return;
+
+            setLoading('btnQuery', 'textQuery', 'spinnerQuery', true);
+            document.getElementById('queryResult').style.display = 'none';
+
+            try {
+                const response = await fetch(`${baseUrl}/${id}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                showResult('queryResult', data, !response.ok);
+            } catch (err) {
+                showResult('queryResult', { error: "Fallo de red o CORS. Revisa la consola o asegúrate de que la URL sea correcta." }, true);
+                console.error(err);
+            } finally {
+                setLoading('btnQuery', 'textQuery', 'spinnerQuery', false);
+            }
+        });
+    </script>
+</body>
+
+</html>
