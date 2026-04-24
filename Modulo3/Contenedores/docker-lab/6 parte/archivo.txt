@@ -1,0 +1,2 @@
+contenido local
+Vamos a copiar este archivo al contenedor
