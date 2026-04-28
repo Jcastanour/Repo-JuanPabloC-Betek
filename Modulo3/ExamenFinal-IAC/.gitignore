@@ -1,0 +1,27 @@
+# Carpeta local de Terraform: providers descargados, módulos cacheados, plugins
+.terraform/
+.terraform.lock.hcl
+
+# Archivos de estado: contienen info sensible (IDs, ARNs, a veces secretos)
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+
+# Archivos de plan binarios
+*.tfplan
+
+# Logs de crash
+crash.log
+crash.*.log
+
+# Variables que pueden contener secretos en proyectos reales
+# (en este examen no hay secretos, pero es buena práctica)
+*.auto.tfvars
+# terraform.tfvars  <-- comentado: en este examen SÍ lo subimos para que se vea
+
+# macOS
+.DS_Store
+
+# Editores
+.vscode/
+.idea/
